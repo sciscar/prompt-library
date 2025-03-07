@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './App.css';
 
 function App() {
   // ESTATS PRINCIPALS
@@ -77,30 +78,26 @@ function App() {
   });
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div className="app">
       {/* Capçalera amb el botó "+" */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="header">
         <h1>Biblioteca de Prompts</h1>
         <button 
+          className="add-btn"
           onClick={() => setShowForm(!showForm)}
-          style={{
-            fontSize: '24px',
-            padding: '5px 10px',
-            cursor: 'pointer'
-          }}
           title="Afegir nou prompt"
         >
           +
         </button>
       </header>
 
-      {/* Formulari per afegir nou prompt, ara situat a la part superior */}
+      {/* Formulari per afegir nou prompt (situat a la part superior) */}
       {showForm && (
-        <section style={{ marginTop: '20px', marginBottom: '20px', border: '1px solid #ccc', padding: '15px' }}>
+        <section className="form-container">
           <h2>Crear un Nou Prompt</h2>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '10px' }}>
-              <label>Categoria:</label><br/>
+            <div className="form-group">
+              <label>Categoria:</label>
               <input
                 type="text"
                 name="categoria"
@@ -110,8 +107,8 @@ function App() {
               />
             </div>
 
-            <div style={{ marginBottom: '10px' }}>
-              <label>Eina IA:</label><br/>
+            <div className="form-group">
+              <label>Eina IA:</label>
               <input
                 type="text"
                 name="einaIA"
@@ -121,8 +118,8 @@ function App() {
               />
             </div>
 
-            <div style={{ marginBottom: '10px' }}>
-              <label>Puntuació:</label><br/>
+            <div className="form-group">
+              <label>Puntuació:</label>
               <input
                 type="number"
                 name="puntuacio"
@@ -132,8 +129,8 @@ function App() {
               />
             </div>
 
-            <div style={{ marginBottom: '10px' }}>
-              <label>Etiquetes (separades per comes):</label><br/>
+            <div className="form-group">
+              <label>Etiquetes (separades per comes):</label>
               <input
                 type="text"
                 name="etiquetes"
@@ -142,30 +139,31 @@ function App() {
               />
             </div>
 
-            <div style={{ marginBottom: '10px' }}>
-              <label>Text del Prompt:</label><br/>
+            <div className="form-group">
+              <label>Text del Prompt:</label>
               <textarea
                 name="textPrompt"
                 rows="4"
-                cols="50"
                 value={formData.textPrompt}
                 onChange={handleChange}
                 placeholder="Escriu el contingut del prompt..."
               />
             </div>
 
-            <button type="submit" style={{ marginRight: '10px' }}>Crear Prompt</button>
-            <button type="button" onClick={() => setShowForm(false)}>
-              Cancel·lar
-            </button>
+            <div className="form-actions">
+              <button type="submit" className="submit-btn">Crear Prompt</button>
+              <button type="button" onClick={() => setShowForm(false)} className="cancel-btn">
+                Cancel·lar
+              </button>
+            </div>
           </form>
         </section>
       )}
 
       {/* Secció de filtres */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ marginBottom: '10px' }}>
-          <label htmlFor="searchTag" style={{ marginRight: '10px' }}>Cerca per etiqueta:</label>
+      <section className="filter-section">
+        <div className="filter-group">
+          <label htmlFor="searchTag">Cerca per etiqueta:</label>
           <input
             type="text"
             id="searchTag"
@@ -174,8 +172,8 @@ function App() {
             placeholder="Introdueix una etiqueta"
           />
         </div>
-        <div>
-          <label htmlFor="categoryFilter" style={{ marginRight: '10px' }}>Filtra per categoria:</label>
+        <div className="filter-group">
+          <label htmlFor="categoryFilter">Filtra per categoria:</label>
           <select
             id="categoryFilter"
             value={selectedCategory}
@@ -189,23 +187,23 @@ function App() {
             ))}
           </select>
         </div>
-      </div>
+      </section>
 
       {/* Llista de Prompts */}
-      <section>
+      <section className="prompt-list">
         <h2>Llista de Prompts</h2>
         {filteredPrompts.length === 0 ? (
           <p>No hi ha prompts que coincideixin amb el filtre.</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul>
             {filteredPrompts.map((prompt, index) => (
-              <li key={index} style={{ border: '1px solid #ddd', padding: '10px', marginBottom: '10px' }}>
+              <li key={index} className="prompt-item">
                 <div><strong>Categoria:</strong> {prompt.categoria}</div>
                 <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
                 <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
                 <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
                 <div><strong>Text del Prompt:</strong></div>
-                <pre style={{ background: '#f4f4f4', padding: '10px' }}>
+                <pre className="prompt-text">
                   {prompt.textPrompt}
                 </pre>
               </li>
