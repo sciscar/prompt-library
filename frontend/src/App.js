@@ -9,15 +9,13 @@ function App() {
     etiquetes: ''
   });
 
-  // Obtenir prompts des del backend
+  // Carregar els prompts des de localStorage al muntar el component
   useEffect(() => {
-    fetch('http://localhost:3000/api/prompts')
-      .then(response => response.json())
-      .then(data => setPrompts(data))
-      .catch(err => console.error('Error:', err));
+    const savedPrompts = JSON.parse(localStorage.getItem('prompts')) || [];
+    setPrompts(savedPrompts);
   }, []);
 
-  // Maneig del canvi en els camps del formulari
+  // Gestionar els canvis en els camps del formulari
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -25,36 +23,30 @@ function App() {
     });
   };
 
-  // Maneig del submit del formulari
+  // Gestionar l'enviament del formulari
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Convertir puntuació a número i etiquetes a array (separant per comes)
-    const prompt = {
+    // Convertir la puntuació a número i les etiquetes a un array (separades per comes)
+    const newPrompt = {
       categoria: formData.categoria,
       einaIA: formData.einaIA,
       puntuacio: Number(formData.puntuacio),
       etiquetes: formData.etiquetes.split(',').map(tag => tag.trim())
     };
 
-    fetch('http://localhost:3000/api/prompts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(prompt)
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Afegir el nou prompt a la llista
-        setPrompts([...prompts, data.prompt]);
-        // Netejar el formulari
-        setFormData({
-          categoria: '',
-          einaIA: '',
-          puntuacio: '',
-          etiquetes: ''
-        });
-      })
-      .catch(err => console.error('Error:', err));
+    // Afegir el nou prompt a la llista existent
+    const updatedPrompts = [...prompts, newPrompt];
+    setPrompts(updatedPrompts);
+    localStorage.setItem('prompts', JSON.stringify(updatedPrompts));
+
+    // Netejar el formulari
+    setFormData({
+      categoria: '',
+      einaIA: '',
+      puntuacio: '',
+      etiquetes: ''
+    });
   };
 
   return (
