@@ -5,6 +5,7 @@ function App() {
   // ESTATS PRINCIPALS
   const [prompts, setPrompts] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingIndex, setEditingIndex] = useState(null);
   const [formData, setFormData] = useState({
     categoria: '',
     einaIA: '',
@@ -31,7 +32,7 @@ function App() {
     });
   };
 
-  // Enviar el formulari per afegir un nou prompt
+  // Enviar el formulari per afegir o editar un prompt
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -46,7 +47,16 @@ function App() {
       textPrompt: formData.textPrompt.trim()
     };
 
-    const updatedPrompts = [...prompts, newPrompt];
+    let updatedPrompts;
+    // Si s'està editant, actualitzar el prompt existent
+    if (editingIndex !== null) {
+      updatedPrompts = prompts.map((prompt, index) =>
+        index === editingIndex ? newPrompt : prompt
+      );
+    } else {
+      // Sino, afegir com a nou prompt
+      updatedPrompts = [...prompts, newPrompt];
+    }
     setPrompts(updatedPrompts);
     localStorage.setItem('prompts', JSON.stringify(updatedPrompts));
 
@@ -58,7 +68,22 @@ function App() {
       etiquetes: '',
       textPrompt: ''
     });
+    setEditingIndex(null);
     setShowForm(false);
+  };
+
+  // Funció per carregar un prompt existent en el formulari per editar-lo
+  const handleEdit = (index) => {
+    const promptToEdit = prompts[index];
+    setFormData({
+      categoria: promptToEdit.categoria,
+      einaIA: promptToEdit.einaIA,
+      puntuacio: promptToEdit.puntuacio,
+      etiquetes: promptToEdit.etiquetes.join(', '),
+      textPrompt: promptToEdit.textPrompt
+    });
+    setEditingIndex(index);
+    setShowForm(true);
   };
 
   // Obtenir categories úniques
@@ -84,17 +109,30 @@ function App() {
         <h1>Biblioteca de Prompts</h1>
         <button 
           className="add-btn"
-          onClick={() => setShowForm(!showForm)}
-          title="Afegir nou prompt"
+          onClick={() => {
+            // Si es tanca el formulari d'edició, també cancel·la l'edició
+            setShowForm(!showForm);
+            if (showForm) {
+              setEditingIndex(null);
+              setFormData({
+                categoria: '',
+                einaIA: '',
+                puntuacio: '',
+                etiquetes: '',
+                textPrompt: ''
+              });
+            }
+          }}
+          title="Afegir o Editar prompt"
         >
           +
         </button>
       </header>
 
-      {/* Formulari per afegir nou prompt (situat a la part superior) */}
+      {/* Formulari per afegir o editar prompt, situat a la part superior */}
       {showForm && (
         <section className="form-container">
-          <h2>Crear un Nou Prompt</h2>
+          <h2>{editingIndex !== null ? 'Edita el Prompt' : 'Crear un Nou Prompt'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Categoria:</label>
@@ -151,8 +189,24 @@ function App() {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="submit-btn">Crear Prompt</button>
-              <button type="button" onClick={() => setShowForm(false)} className="cancel-btn">
+              <button type="submit" className="submit-btn">
+                {editingIndex !== null ? 'Guardar Canvis' : 'Crear Prompt'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingIndex(null);
+                  setFormData({
+                    categoria: '',
+                    einaIA: '',
+                    puntuacio: '',
+                    etiquetes: '',
+                    textPrompt: ''
+                  });
+                }}
+                className="cancel-btn"
+              >
                 Cancel·lar
               </button>
             </div>
@@ -203,9 +257,8 @@ function App() {
                 <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
                 <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
                 <div><strong>Text del Prompt:</strong></div>
-                <pre className="prompt-text">
-                  {prompt.textPrompt}
-                </pre>
+                <pre className="prompt-text">{prompt.textPrompt}</pre>
+                <button onClick={() => handleEdit(index)} className="edit-btn">Edita</button>
               </li>
             ))}
           </ul>
