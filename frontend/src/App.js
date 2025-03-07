@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 function App() {
-  // ESTAT PRINCIPAL
+  // ESTATS PRINCIPALS
   const [prompts, setPrompts] = useState([]);
+  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     categoria: '',
     einaIA: '',
@@ -11,17 +12,17 @@ function App() {
     textPrompt: ''
   });
 
-  // ESTAT PER A FILTRES
+  // ESTATS PER FILTRAR
   const [searchTag, setSearchTag] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  // CARREGAR PROMPTS DES DE localStorage
+  // Carregar els prompts des de localStorage
   useEffect(() => {
     const savedPrompts = JSON.parse(localStorage.getItem('prompts')) || [];
     setPrompts(savedPrompts);
   }, []);
 
-  // GESTIÓ DE CANVIS AL FORMULARI
+  // Gestionar canvis als camps del formulari
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -29,11 +30,10 @@ function App() {
     });
   };
 
-  // AFEGIR UN NOU PROMPT
+  // Enviar el formulari per afegir un nou prompt
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Convertir puntuació a número i etiquetes a array
     const newPrompt = {
       categoria: formData.categoria.trim(),
       einaIA: formData.einaIA.trim(),
@@ -45,12 +45,11 @@ function App() {
       textPrompt: formData.textPrompt.trim()
     };
 
-    // Afegir el nou prompt a la llista
     const updatedPrompts = [...prompts, newPrompt];
     setPrompts(updatedPrompts);
     localStorage.setItem('prompts', JSON.stringify(updatedPrompts));
 
-    // Netejar el formulari
+    // Netejar el formulari i tancar-lo
     setFormData({
       categoria: '',
       einaIA: '',
@@ -58,68 +57,79 @@ function App() {
       etiquetes: '',
       textPrompt: ''
     });
+    setShowForm(false);
   };
 
-  // LLISTA DE CATEGORIES (extretes dels prompts)
+  // Obtenir categories úniques
   const categories = Array.from(new Set(prompts.map(p => p.categoria))).filter(cat => cat);
 
-  // FILTRAR PROMPTS SEGONS EL TAG I LA CATEGORIA
+  // Filtrar prompts segons etiqueta i categoria
   const filteredPrompts = prompts.filter(prompt => {
-    // Filtre per etiqueta (searchTag)
     const matchTag = searchTag === '' 
       ? true 
       : prompt.etiquetes.includes(searchTag.trim());
-
-    // Filtre per categoria (selectedCategory)
     const matchCategory = selectedCategory === '' 
       ? true 
       : prompt.categoria === selectedCategory;
-
     return matchTag && matchCategory;
   });
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Biblioteca de Prompts</h1>
-
-      {/* FILTRE PER ETIQUETA */}
-      <div style={{ marginBottom: '20px' }}>
-        <label htmlFor="searchTag" style={{ marginRight: '10px' }}>Cerca per etiqueta:</label>
-        <input
-          type="text"
-          id="searchTag"
-          value={searchTag}
-          onChange={(e) => setSearchTag(e.target.value)}
-          placeholder="Introdueix una etiqueta"
-        />
-      </div>
-
-      {/* DESPLEGABLE DE CATEGORIES */}
-      <div style={{ marginBottom: '20px' }}>
-        <label htmlFor="categoryFilter" style={{ marginRight: '10px' }}>Filtra per categoria:</label>
-        <select
-          id="categoryFilter"
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      {/* Capçalera amb el botó "+" */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>Biblioteca de Prompts</h1>
+        <button 
+          onClick={() => setShowForm(!showForm)}
+          style={{
+            fontSize: '24px',
+            padding: '5px 10px',
+            cursor: 'pointer'
+          }}
+          title="Afegir nou prompt"
         >
-          <option value="">Totes</option>
-          {categories.map((cat, index) => (
-            <option key={index} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+          +
+        </button>
+      </header>
+
+      {/* Secció de filtres */}
+      <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+        <div style={{ marginBottom: '10px' }}>
+          <label htmlFor="searchTag" style={{ marginRight: '10px' }}>Cerca per etiqueta:</label>
+          <input
+            type="text"
+            id="searchTag"
+            value={searchTag}
+            onChange={(e) => setSearchTag(e.target.value)}
+            placeholder="Introdueix una etiqueta"
+          />
+        </div>
+        <div>
+          <label htmlFor="categoryFilter" style={{ marginRight: '10px' }}>Filtra per categoria:</label>
+          <select
+            id="categoryFilter"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">Totes</option>
+            {categories.map((cat, index) => (
+              <option key={index} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* LLISTA DE PROMPTS */}
+      {/* Llista de Prompts */}
       <section>
         <h2>Llista de Prompts</h2>
         {filteredPrompts.length === 0 ? (
           <p>No hi ha prompts que coincideixin amb el filtre.</p>
         ) : (
-          <ul>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
             {filteredPrompts.map((prompt, index) => (
-              <li key={index} style={{ marginBottom: '20px' }}>
+              <li key={index} style={{ border: '1px solid #ddd', padding: '10px', marginBottom: '10px' }}>
                 <div><strong>Categoria:</strong> {prompt.categoria}</div>
                 <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
                 <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
@@ -134,68 +144,73 @@ function App() {
         )}
       </section>
 
-      {/* FORMULARI PER AFEGIR UN NOU PROMPT */}
-      <section style={{ marginTop: '40px' }}>
-        <h2>Crear un Nou Prompt</h2>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>Categoria:</label><br/>
-            <input
-              type="text"
-              name="categoria"
-              value={formData.categoria}
-              onChange={handleChange}
-              required
-            />
-          </div>
+      {/* Formulari per afegir nou prompt (apareix al clicar el botó "+") */}
+      {showForm && (
+        <section style={{ marginTop: '40px' }}>
+          <h2>Crear un Nou Prompt</h2>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '10px' }}>
+              <label>Categoria:</label><br/>
+              <input
+                type="text"
+                name="categoria"
+                value={formData.categoria}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div>
-            <label>Eina IA:</label><br/>
-            <input
-              type="text"
-              name="einaIA"
-              value={formData.einaIA}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label>Eina IA:</label><br/>
+              <input
+                type="text"
+                name="einaIA"
+                value={formData.einaIA}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div>
-            <label>Puntuació:</label><br/>
-            <input
-              type="number"
-              name="puntuacio"
-              value={formData.puntuacio}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label>Puntuació:</label><br/>
+              <input
+                type="number"
+                name="puntuacio"
+                value={formData.puntuacio}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div>
-            <label>Etiquetes (separades per comes):</label><br/>
-            <input
-              type="text"
-              name="etiquetes"
-              value={formData.etiquetes}
-              onChange={handleChange}
-            />
-          </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label>Etiquetes (separades per comes):</label><br/>
+              <input
+                type="text"
+                name="etiquetes"
+                value={formData.etiquetes}
+                onChange={handleChange}
+              />
+            </div>
 
-          <div>
-            <label>Text del Prompt:</label><br/>
-            <textarea
-              name="textPrompt"
-              rows="4"
-              cols="50"
-              value={formData.textPrompt}
-              onChange={handleChange}
-              placeholder="Escriu el contingut del prompt..."
-            />
-          </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label>Text del Prompt:</label><br/>
+              <textarea
+                name="textPrompt"
+                rows="4"
+                cols="50"
+                value={formData.textPrompt}
+                onChange={handleChange}
+                placeholder="Escriu el contingut del prompt..."
+              />
+            </div>
 
-          <button type="submit" style={{ marginTop: '10px' }}>Crear Prompt</button>
-        </form>
-      </section>
+            <button type="submit" style={{ marginRight: '10px' }}>Crear Prompt</button>
+            <button type="button" onClick={() => setShowForm(false)}>
+              Cancel·lar
+            </button>
+          </form>
+        </section>
+      )}
     </div>
   );
 }
