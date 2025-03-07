@@ -63,14 +63,16 @@ function App() {
   // Obtenir categories úniques
   const categories = Array.from(new Set(prompts.map(p => p.categoria))).filter(cat => cat);
 
-  // Filtrar prompts segons etiqueta i categoria
+  // Filtrar prompts segons etiqueta i categoria, amb cerca parcial i sense distingir majúscules/minúscules
   const filteredPrompts = prompts.filter(prompt => {
-    const matchTag = searchTag === '' 
-      ? true 
-      : prompt.etiquetes.includes(searchTag.trim());
-    const matchCategory = selectedCategory === '' 
-      ? true 
-      : prompt.categoria === selectedCategory;
+    const matchTag =
+      searchTag === ''
+        ? true
+        : prompt.etiquetes.some(tag =>
+            tag.toLowerCase().includes(searchTag.trim().toLowerCase())
+          );
+    const matchCategory =
+      selectedCategory === '' ? true : prompt.categoria === selectedCategory;
     return matchTag && matchCategory;
   });
 
@@ -92,61 +94,9 @@ function App() {
         </button>
       </header>
 
-      {/* Secció de filtres */}
-      <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-        <div style={{ marginBottom: '10px' }}>
-          <label htmlFor="searchTag" style={{ marginRight: '10px' }}>Cerca per etiqueta:</label>
-          <input
-            type="text"
-            id="searchTag"
-            value={searchTag}
-            onChange={(e) => setSearchTag(e.target.value)}
-            placeholder="Introdueix una etiqueta"
-          />
-        </div>
-        <div>
-          <label htmlFor="categoryFilter" style={{ marginRight: '10px' }}>Filtra per categoria:</label>
-          <select
-            id="categoryFilter"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">Totes</option>
-            {categories.map((cat, index) => (
-              <option key={index} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Llista de Prompts */}
-      <section>
-        <h2>Llista de Prompts</h2>
-        {filteredPrompts.length === 0 ? (
-          <p>No hi ha prompts que coincideixin amb el filtre.</p>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {filteredPrompts.map((prompt, index) => (
-              <li key={index} style={{ border: '1px solid #ddd', padding: '10px', marginBottom: '10px' }}>
-                <div><strong>Categoria:</strong> {prompt.categoria}</div>
-                <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
-                <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
-                <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
-                <div><strong>Text del Prompt:</strong></div>
-                <pre style={{ background: '#f4f4f4', padding: '10px' }}>
-                  {prompt.textPrompt}
-                </pre>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Formulari per afegir nou prompt (apareix al clicar el botó "+") */}
+      {/* Formulari per afegir nou prompt, ara situat a la part superior */}
       {showForm && (
-        <section style={{ marginTop: '40px' }}>
+        <section style={{ marginTop: '20px', marginBottom: '20px', border: '1px solid #ccc', padding: '15px' }}>
           <h2>Crear un Nou Prompt</h2>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '10px' }}>
@@ -211,6 +161,58 @@ function App() {
           </form>
         </section>
       )}
+
+      {/* Secció de filtres */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '10px' }}>
+          <label htmlFor="searchTag" style={{ marginRight: '10px' }}>Cerca per etiqueta:</label>
+          <input
+            type="text"
+            id="searchTag"
+            value={searchTag}
+            onChange={(e) => setSearchTag(e.target.value)}
+            placeholder="Introdueix una etiqueta"
+          />
+        </div>
+        <div>
+          <label htmlFor="categoryFilter" style={{ marginRight: '10px' }}>Filtra per categoria:</label>
+          <select
+            id="categoryFilter"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">Totes</option>
+            {categories.map((cat, index) => (
+              <option key={index} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Llista de Prompts */}
+      <section>
+        <h2>Llista de Prompts</h2>
+        {filteredPrompts.length === 0 ? (
+          <p>No hi ha prompts que coincideixin amb el filtre.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {filteredPrompts.map((prompt, index) => (
+              <li key={index} style={{ border: '1px solid #ddd', padding: '10px', marginBottom: '10px' }}>
+                <div><strong>Categoria:</strong> {prompt.categoria}</div>
+                <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
+                <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
+                <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
+                <div><strong>Text del Prompt:</strong></div>
+                <pre style={{ background: '#f4f4f4', padding: '10px' }}>
+                  {prompt.textPrompt}
+                </pre>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
