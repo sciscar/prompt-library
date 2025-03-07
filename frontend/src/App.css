@@ -182,3 +182,24 @@ body {
 .edit-btn:hover {
   background: #ffeaa7;
 }
+
+/* Cerca global */
+.global-search-section {
+  margin: 20px 0;
+  background: #dfe6e9;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.global-search-section label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.global-search-section input {
+  padding: 8px;
+  border: 1px solid #b2bec3;
+  border-radius: 3px;
+  width: 100%;
+  max-width: 400px;
+}

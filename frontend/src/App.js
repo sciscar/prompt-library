@@ -7,6 +7,8 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [formData, setFormData] = useState({
+    nom: '',
+    descripcio: '',
     categoria: '',
     einaIA: '',
     puntuacio: '',
@@ -15,6 +17,7 @@ function App() {
   });
 
   // ESTATS PER FILTRAR
+  const [globalSearch, setGlobalSearch] = useState('');
   const [searchTag, setSearchTag] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -37,6 +40,8 @@ function App() {
     e.preventDefault();
 
     const newPrompt = {
+      nom: formData.nom.trim(),
+      descripcio: formData.descripcio.trim(),
       categoria: formData.categoria.trim(),
       einaIA: formData.einaIA.trim(),
       puntuacio: Number(formData.puntuacio),
@@ -62,6 +67,8 @@ function App() {
 
     // Netejar el formulari i tancar-lo
     setFormData({
+      nom: '',
+      descripcio: '',
       categoria: '',
       einaIA: '',
       puntuacio: '',
@@ -76,6 +83,8 @@ function App() {
   const handleEdit = (index) => {
     const promptToEdit = prompts[index];
     setFormData({
+      nom: promptToEdit.nom,
+      descripcio: promptToEdit.descripcio,
       categoria: promptToEdit.categoria,
       einaIA: promptToEdit.einaIA,
       puntuacio: promptToEdit.puntuacio,
@@ -89,8 +98,30 @@ function App() {
   // Obtenir categories úniques
   const categories = Array.from(new Set(prompts.map(p => p.categoria))).filter(cat => cat);
 
-  // Filtrar prompts segons etiqueta i categoria, amb cerca parcial i sense distingir majúscules/minúscules
+  // Funció auxiliar que comprova si un prompt conté la cadena de cerca en qualsevol camp
+  const containsSearch = (prompt, search) => {
+    const searchStr = search.trim().toLowerCase();
+    if (searchStr === '') return true;
+    
+    const fields = [
+      prompt.nom,
+      prompt.descripcio,
+      prompt.categoria,
+      prompt.einaIA,
+      String(prompt.puntuacio),
+      prompt.textPrompt,
+      prompt.etiquetes.join(' ')
+    ];
+    
+    return fields.some(field =>
+      String(field || '').toLowerCase().includes(searchStr)
+    );
+  };
+  
+
+  // Filtrar prompts segons el buscador global, etiqueta i categoria
   const filteredPrompts = prompts.filter(prompt => {
+    const globalMatch = containsSearch(prompt, globalSearch);
     const matchTag =
       searchTag === ''
         ? true
@@ -99,7 +130,7 @@ function App() {
           );
     const matchCategory =
       selectedCategory === '' ? true : prompt.categoria === selectedCategory;
-    return matchTag && matchCategory;
+    return globalMatch && matchTag && matchCategory;
   });
 
   return (
@@ -115,6 +146,8 @@ function App() {
             if (showForm) {
               setEditingIndex(null);
               setFormData({
+                nom: '',
+                descripcio: '',
                 categoria: '',
                 einaIA: '',
                 puntuacio: '',
@@ -129,11 +162,46 @@ function App() {
         </button>
       </header>
 
+      {/* Buscador Global */}
+      <section className="global-search-section">
+        <label htmlFor="globalSearch">Cerca global:</label>
+        <input
+          type="text"
+          id="globalSearch"
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          placeholder="Cerca en tots els camps..."
+        />
+      </section>
+
       {/* Formulari per afegir o editar prompt, situat a la part superior */}
       {showForm && (
         <section className="form-container">
           <h2>{editingIndex !== null ? 'Edita el Prompt' : 'Crear un Nou Prompt'}</h2>
           <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Nom:</label>
+              <input
+                type="text"
+                name="nom"
+                value={formData.nom}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Descripció:</label>
+              <textarea
+                name="descripcio"
+                rows="3"
+                value={formData.descripcio}
+                onChange={handleChange}
+                placeholder="Escriu una breu descripció..."
+                required
+              />
+            </div>
+
             <div className="form-group">
               <label>Categoria:</label>
               <input
@@ -198,6 +266,8 @@ function App() {
                   setShowForm(false);
                   setEditingIndex(null);
                   setFormData({
+                    nom: '',
+                    descripcio: '',
                     categoria: '',
                     einaIA: '',
                     puntuacio: '',
@@ -214,7 +284,7 @@ function App() {
         </section>
       )}
 
-      {/* Secció de filtres */}
+      {/* Secció de filtres específics */}
       <section className="filter-section">
         <div className="filter-group">
           <label htmlFor="searchTag">Cerca per etiqueta:</label>
@@ -252,6 +322,8 @@ function App() {
           <ul>
             {filteredPrompts.map((prompt, index) => (
               <li key={index} className="prompt-item">
+                <div><strong>Nom:</strong> {prompt.nom}</div>
+                <div><strong>Descripció:</strong> {prompt.descripcio}</div>
                 <div><strong>Categoria:</strong> {prompt.categoria}</div>
                 <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
                 <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
