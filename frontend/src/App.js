@@ -27,7 +27,7 @@ function App() {
   // Afegir aquests estats al component principal
   const [adminLogged, setAdminLogged] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
-  const ADMIN_PASSWORD = "1234";
+  const ADMIN_PASSWORD = "Sebas_2025!";
 
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
