@@ -129,6 +129,17 @@ function App() {
     setShowForm(true);
   };
 
+  const handleCopy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Prompt copiat al porta-retalls!");
+    } catch (error) {
+      console.error("Error copiant el prompt:", error);
+      alert("Error copiant el prompt.");
+    }
+  };
+  
+
   // Funció per filtrar prompts amb cerca global
   const filteredPrompts = prompts.filter(prompt => {
     const searchStr = globalSearch.trim().toLowerCase();
@@ -252,26 +263,32 @@ function App() {
           <p>No hi ha prompts que coincideixin amb el filtre.</p>
         ) : (
           <ul>
-          {filteredPrompts.map(prompt => (
-            <li key={prompt.id} className="prompt-item">
-              <div><strong>Nom:</strong> {prompt.nom}</div>
-              <div><strong>Descripció:</strong> {prompt.descripcio}</div>
-              <div><strong>Categoria:</strong> {prompt.categoria}</div>
-              <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
-              <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
-              <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
-              <div><strong>Text del Prompt:</strong></div>
-              <pre className="prompt-text">{prompt.textPrompt}</pre>
-              
-              {adminLogged && (
-                <div className="admin-actions">
-                  <button onClick={() => handleEdit(prompt)} className="edit-btn">Edita</button>
-                  <button onClick={() => handleDelete(prompt.id)} className="delete-btn">Esborra</button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+            {filteredPrompts.map(prompt => (
+              <li key={prompt.id} className="prompt-item">
+                <div><strong>Nom:</strong> {prompt.nom}</div>
+                <div><strong>Descripció:</strong> {prompt.descripcio}</div>
+                <div><strong>Categoria:</strong> {prompt.categoria}</div>
+                <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
+                <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
+                <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
+                <div><strong>Text del Prompt:</strong></div>
+                <pre className="prompt-text">{prompt.textPrompt}</pre>
+                
+                {/* Botó per copiar el text del prompt */}
+                <button onClick={() => handleCopy(prompt.textPrompt)} className="copy-btn">
+                  Copia
+                </button>
+                
+                {/* Botons d'edició i esborrat visibles només per l'administrador */}
+                {adminLogged && (
+                  <div className="admin-actions">
+                    <button onClick={() => handleEdit(prompt)} className="edit-btn">Edita</button>
+                    <button onClick={() => handleDelete(prompt.id)} className="delete-btn">Esborra</button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
         
         )}
       </section>
