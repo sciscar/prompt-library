@@ -108,7 +108,7 @@ function App() {
     const searchStr = search.trim().toLowerCase();
     if (searchStr === '') return true;
   
-    // Convertir cada camp a una cadena segura
+    // Convertir cada camp a una cadena seguras per la cerca
     const fields = [
       prompt?.nom ?? '',
       prompt?.descripcio ?? '',
