@@ -6,10 +6,12 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   query,
   orderBy,
 } from "firebase/firestore";
+
 
 function App() {
   const [prompts, setPrompts] = useState([]);
@@ -22,6 +24,11 @@ function App() {
     etiquetes: '',
     textPrompt: ''
   });
+  // Afegir aquests estats al component principal
+  const [adminLogged, setAdminLogged] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const ADMIN_PASSWORD = "1234";
+
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
@@ -53,6 +60,17 @@ function App() {
       [e.target.name]: e.target.value
     });
   };
+
+  const handleDelete = async (promptId) => {
+    if (!window.confirm("Estàs segur que vols esborrar aquest prompt?")) return;
+    try {
+      await deleteDoc(doc(db, "prompts", promptId));
+      fetchPrompts(); // Refresca la llista
+    } catch (error) {
+      console.error("Error esborrant el prompt:", error);
+    }
+  };
+  
 
   // Funció per afegir o actualitzar un prompt
   const handleSubmit = async (e) => {
@@ -131,9 +149,36 @@ function App() {
     <div className="app">
       <header className="header">
         <h1>Biblioteca de Prompts</h1>
-        <button className="add-btn" onClick={() => setShowForm(!showForm)} title="Afegir prompt">
-          +
-        </button>
+          <button className="add-btn" onClick={() => setShowForm(!showForm)} title="Afegir prompt">
+            +
+          </button>
+          {/* Secció d'autenticació admin */}
+          {!adminLogged && (
+            <div className="admin-login">
+              <input
+                type="password"
+                placeholder="Password admin"
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+              />
+              <button onClick={() => {
+                if (adminPasswordInput === ADMIN_PASSWORD) {
+                  setAdminLogged(true);
+                  setAdminPasswordInput("");
+                } else {
+                  alert("Password incorrecte");
+                }
+              }}>
+                Login
+              </button>
+            </div>
+          )}
+          {adminLogged && (
+            <div className="admin-logged">
+              <span>Admin actiu</span>
+              <button onClick={() => setAdminLogged(false)}>Logout</button>
+            </div>
+          )}
       </header>
 
       <section className="global-search-section">
@@ -207,20 +252,27 @@ function App() {
           <p>No hi ha prompts que coincideixin amb el filtre.</p>
         ) : (
           <ul>
-            {filteredPrompts.map(prompt => (
-              <li key={prompt.id} className="prompt-item">
-                <div><strong>Nom:</strong> {prompt.nom}</div>
-                <div><strong>Descripció:</strong> {prompt.descripcio}</div>
-                <div><strong>Categoria:</strong> {prompt.categoria}</div>
-                <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
-                <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
-                <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
-                <div><strong>Text del Prompt:</strong></div>
-                <pre className="prompt-text">{prompt.textPrompt}</pre>
-                <button onClick={() => handleEdit(prompt)} className="edit-btn">Edita</button>
-              </li>
-            ))}
-          </ul>
+          {filteredPrompts.map(prompt => (
+            <li key={prompt.id} className="prompt-item">
+              <div><strong>Nom:</strong> {prompt.nom}</div>
+              <div><strong>Descripció:</strong> {prompt.descripcio}</div>
+              <div><strong>Categoria:</strong> {prompt.categoria}</div>
+              <div><strong>Eina IA:</strong> {prompt.einaIA}</div>
+              <div><strong>Puntuació:</strong> {prompt.puntuacio}</div>
+              <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
+              <div><strong>Text del Prompt:</strong></div>
+              <pre className="prompt-text">{prompt.textPrompt}</pre>
+              
+              {adminLogged && (
+                <div className="admin-actions">
+                  <button onClick={() => handleEdit(prompt)} className="edit-btn">Edita</button>
+                  <button onClick={() => handleDelete(prompt.id)} className="delete-btn">Esborra</button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        
         )}
       </section>
     </div>
