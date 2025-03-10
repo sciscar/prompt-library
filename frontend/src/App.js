@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { db } from './firebaseConfig';
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  query,
+  orderBy,
+} from "firebase/firestore";
 
 function App() {
-  // ESTATS PRINCIPALS
   const [prompts, setPrompts] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
   const [formData, setFormData] = useState({
     nom: '',
     descripcio: '',
@@ -15,19 +22,31 @@ function App() {
     etiquetes: '',
     textPrompt: ''
   });
-
-  // ESTATS PER FILTRAR
+  const [editingId, setEditingId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
-  const [searchTag, setSearchTag] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
 
-  // Carregar els prompts des de localStorage
+  // Referència a la col·lecció de Firestore
+  const promptsCollection = collection(db, "prompts");
+
+  // Carregar els prompts de Firestore
+  const fetchPrompts = async () => {
+    try {
+      // Opcional: afegir un ordre, per exemple, per data o per nom
+      const q = query(promptsCollection, orderBy("nom"));
+      const querySnapshot = await getDocs(q);
+      const promptsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPrompts(promptsList);
+    } catch (error) {
+      console.error("Error carregant els prompts:", error);
+    }
+  };
+
   useEffect(() => {
-    const savedPrompts = JSON.parse(localStorage.getItem('prompts')) || [];
-    setPrompts(savedPrompts);
+    fetchPrompts();
   }, []);
 
-  // Gestionar canvis als camps del formulari
+  // Manejar canvis al formulari
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -35,141 +54,88 @@ function App() {
     });
   };
 
-  // Enviar el formulari per afegir o editar un prompt
-  const handleSubmit = (e) => {
+  // Funció per afegir o actualitzar un prompt
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const newPrompt = {
+    const promptData = {
       nom: formData.nom.trim(),
       descripcio: formData.descripcio.trim(),
       categoria: formData.categoria.trim(),
       einaIA: formData.einaIA.trim(),
       puntuacio: Number(formData.puntuacio),
-      etiquetes: formData.etiquetes
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag !== ''),
-      textPrompt: formData.textPrompt.trim()
+      etiquetes: formData.etiquetes.split(',').map(tag => tag.trim()).filter(tag => tag),
+      textPrompt: formData.textPrompt.trim(),
+      timestamp: new Date()
     };
 
-    let updatedPrompts;
-    // Si s'està editant, actualitzar el prompt existent
-    if (editingIndex !== null) {
-      updatedPrompts = prompts.map((prompt, index) =>
-        index === editingIndex ? newPrompt : prompt
-      );
-    } else {
-      // Sino, afegir com a nou prompt
-      updatedPrompts = [...prompts, newPrompt];
+    try {
+      if (editingId) {
+        // Actualitzar el document existent
+        const docRef = doc(db, "prompts", editingId);
+        await updateDoc(docRef, promptData);
+      } else {
+        // Afegir un nou document
+        await addDoc(promptsCollection, promptData);
+      }
+      // Refrescar la llista
+      fetchPrompts();
+      // Netejar el formulari i tancar-lo
+      setFormData({
+        nom: '',
+        descripcio: '',
+        categoria: '',
+        einaIA: '',
+        puntuacio: '',
+        etiquetes: '',
+        textPrompt: ''
+      });
+      setEditingId(null);
+      setShowForm(false);
+    } catch (error) {
+      console.error("Error afegint/actualitzant prompt:", error);
     }
-    setPrompts(updatedPrompts);
-    localStorage.setItem('prompts', JSON.stringify(updatedPrompts));
-
-    // Netejar el formulari i tancar-lo
-    setFormData({
-      nom: '',
-      descripcio: '',
-      categoria: '',
-      einaIA: '',
-      puntuacio: '',
-      etiquetes: '',
-      textPrompt: ''
-    });
-    setEditingIndex(null);
-    setShowForm(false);
   };
 
-  // Funció per carregar un prompt existent en el formulari per editar-lo
-  const handleEdit = (index) => {
-    const promptToEdit = prompts[index];
+  // Funció per carregar un prompt existent al formulari per editar-lo
+  const handleEdit = (prompt) => {
     setFormData({
-      nom: promptToEdit.nom,
-      descripcio: promptToEdit.descripcio,
-      categoria: promptToEdit.categoria,
-      einaIA: promptToEdit.einaIA,
-      puntuacio: promptToEdit.puntuacio,
-      etiquetes: promptToEdit.etiquetes.join(', '),
-      textPrompt: promptToEdit.textPrompt
+      nom: prompt.nom,
+      descripcio: prompt.descripcio,
+      categoria: prompt.categoria,
+      einaIA: prompt.einaIA,
+      puntuacio: prompt.puntuacio,
+      etiquetes: prompt.etiquetes.join(', '),
+      textPrompt: prompt.textPrompt
     });
-    setEditingIndex(index);
+    setEditingId(prompt.id);
     setShowForm(true);
   };
 
-  // Obtenir categories úniques
-  const categories = Array.from(new Set(prompts.map(p => p.categoria))).filter(cat => cat);
-
-  // Funció auxiliar que comprova si un prompt conté la cadena de cerca en qualsevol camp
-  const containsSearch = (prompt, search) => {
-    // Si per algun motiu 'prompt' és null o undefined, tornem false o true segons convingui
-    if (!prompt) {
-      return false; 
-    }
-  
-    const searchStr = search.trim().toLowerCase();
-    if (searchStr === '') return true;
-  
-    // Convertir cada camp a una cadena seguras per la cerca
-    const fields = [
-      prompt?.nom ?? '',
-      prompt?.descripcio ?? '',
-      prompt?.categoria ?? '',
-      prompt?.einaIA ?? '',
-      prompt?.puntuacio != null ? String(prompt?.puntuacio) : '',
-      prompt?.textPrompt ?? '',
-      (prompt?.etiquetes ?? []).join(' ')
-    ];
-  
-    // Retornem true si algun camp inclou la cadena de cerca
-    return fields.some(field => field.toLowerCase().includes(searchStr));
-  };
-  
-  
-  
-
-  // Filtrar prompts segons el buscador global, etiqueta i categoria
+  // Funció per filtrar prompts amb cerca global
   const filteredPrompts = prompts.filter(prompt => {
-    const globalMatch = containsSearch(prompt, globalSearch);
-    const matchTag =
-      searchTag === ''
-        ? true
-        : prompt.etiquetes.some(tag =>
-            tag.toLowerCase().includes(searchTag.trim().toLowerCase())
-          );
-    const matchCategory =
-      selectedCategory === '' ? true : prompt.categoria === selectedCategory;
-    return globalMatch && matchTag && matchCategory;
+    const searchStr = globalSearch.trim().toLowerCase();
+    if (searchStr === "") return true;
+    const fields = [
+      prompt.nom,
+      prompt.descripcio,
+      prompt.categoria,
+      prompt.einaIA,
+      String(prompt.puntuacio),
+      prompt.textPrompt,
+      prompt.etiquetes.join(' ')
+    ];
+    return fields.some(field => field.toLowerCase().includes(searchStr));
   });
 
   return (
     <div className="app">
-      {/* Capçalera amb el botó "+" */}
       <header className="header">
         <h1>Biblioteca de Prompts</h1>
-        <button 
-          className="add-btn"
-          onClick={() => {
-            // Si es tanca el formulari d'edició, també cancel·la l'edició
-            setShowForm(!showForm);
-            if (showForm) {
-              setEditingIndex(null);
-              setFormData({
-                nom: '',
-                descripcio: '',
-                categoria: '',
-                einaIA: '',
-                puntuacio: '',
-                etiquetes: '',
-                textPrompt: ''
-              });
-            }
-          }}
-          title="Afegir o Editar prompt"
-        >
+        <button className="add-btn" onClick={() => setShowForm(!showForm)} title="Afegir prompt">
           +
         </button>
       </header>
 
-      {/* Buscador Global */}
       <section className="global-search-section">
         <label htmlFor="globalSearch">Cerca global:</label>
         <input
@@ -181,154 +147,68 @@ function App() {
         />
       </section>
 
-      {/* Formulari per afegir o editar prompt, situat a la part superior */}
       {showForm && (
         <section className="form-container">
-          <h2>{editingIndex !== null ? 'Edita el Prompt' : 'Crear un Nou Prompt'}</h2>
+          <h2>{editingId ? 'Edita el Prompt' : 'Crear un Nou Prompt'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Nom:</label>
-              <input
-                type="text"
-                name="nom"
-                value={formData.nom}
-                onChange={handleChange}
-                required
-              />
+              <input type="text" name="nom" value={formData.nom} onChange={handleChange} required />
             </div>
-
             <div className="form-group">
               <label>Descripció:</label>
-              <textarea
-                name="descripcio"
-                rows="3"
-                value={formData.descripcio}
-                onChange={handleChange}
-                placeholder="Escriu una breu descripció..."
-                required
-              />
+              <textarea name="descripcio" rows="3" value={formData.descripcio} onChange={handleChange} required />
             </div>
-
             <div className="form-group">
               <label>Categoria:</label>
-              <input
-                type="text"
-                name="categoria"
-                value={formData.categoria}
-                onChange={handleChange}
-                required
-              />
+              <input type="text" name="categoria" value={formData.categoria} onChange={handleChange} required />
             </div>
-
             <div className="form-group">
               <label>Eina IA:</label>
-              <input
-                type="text"
-                name="einaIA"
-                value={formData.einaIA}
-                onChange={handleChange}
-                required
-              />
+              <input type="text" name="einaIA" value={formData.einaIA} onChange={handleChange} required />
             </div>
-
             <div className="form-group">
               <label>Puntuació:</label>
-              <input
-                type="number"
-                name="puntuacio"
-                value={formData.puntuacio}
-                onChange={handleChange}
-                required
-              />
+              <input type="number" name="puntuacio" value={formData.puntuacio} onChange={handleChange} required />
             </div>
-
             <div className="form-group">
               <label>Etiquetes (separades per comes):</label>
-              <input
-                type="text"
-                name="etiquetes"
-                value={formData.etiquetes}
-                onChange={handleChange}
-              />
+              <input type="text" name="etiquetes" value={formData.etiquetes} onChange={handleChange} />
             </div>
-
             <div className="form-group">
               <label>Text del Prompt:</label>
-              <textarea
-                name="textPrompt"
-                rows="4"
-                value={formData.textPrompt}
-                onChange={handleChange}
-                placeholder="Escriu el contingut del prompt..."
-              />
+              <textarea name="textPrompt" rows="4" value={formData.textPrompt} onChange={handleChange} required />
             </div>
-
             <div className="form-actions">
               <button type="submit" className="submit-btn">
-                {editingIndex !== null ? 'Guardar Canvis' : 'Crear Prompt'}
+                {editingId ? 'Guardar Canvis' : 'Crear Prompt'}
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingIndex(null);
-                  setFormData({
-                    nom: '',
-                    descripcio: '',
-                    categoria: '',
-                    einaIA: '',
-                    puntuacio: '',
-                    etiquetes: '',
-                    textPrompt: ''
-                  });
-                }}
-                className="cancel-btn"
-              >
-                Cancel·lar
-              </button>
+              <button type="button" className="cancel-btn" onClick={() => {
+                setShowForm(false);
+                setEditingId(null);
+                setFormData({
+                  nom: '',
+                  descripcio: '',
+                  categoria: '',
+                  einaIA: '',
+                  puntuacio: '',
+                  etiquetes: '',
+                  textPrompt: ''
+                });
+              }}>Cancel·lar</button>
             </div>
           </form>
         </section>
       )}
 
-      {/* Secció de filtres específics */}
-      <section className="filter-section">
-        <div className="filter-group">
-          <label htmlFor="searchTag">Cerca per etiqueta:</label>
-          <input
-            type="text"
-            id="searchTag"
-            value={searchTag}
-            onChange={(e) => setSearchTag(e.target.value)}
-            placeholder="Introdueix una etiqueta"
-          />
-        </div>
-        <div className="filter-group">
-          <label htmlFor="categoryFilter">Filtra per categoria:</label>
-          <select
-            id="categoryFilter"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">Totes</option>
-            {categories.map((cat, index) => (
-              <option key={index} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
-
-      {/* Llista de Prompts */}
       <section className="prompt-list">
         <h2>Llista de Prompts</h2>
         {filteredPrompts.length === 0 ? (
           <p>No hi ha prompts que coincideixin amb el filtre.</p>
         ) : (
           <ul>
-            {filteredPrompts.map((prompt, index) => (
-              <li key={index} className="prompt-item">
+            {filteredPrompts.map(prompt => (
+              <li key={prompt.id} className="prompt-item">
                 <div><strong>Nom:</strong> {prompt.nom}</div>
                 <div><strong>Descripció:</strong> {prompt.descripcio}</div>
                 <div><strong>Categoria:</strong> {prompt.categoria}</div>
@@ -337,7 +217,7 @@ function App() {
                 <div><strong>Etiquetes:</strong> {prompt.etiquetes.join(', ')}</div>
                 <div><strong>Text del Prompt:</strong></div>
                 <pre className="prompt-text">{prompt.textPrompt}</pre>
-                <button onClick={() => handleEdit(index)} className="edit-btn">Edita</button>
+                <button onClick={() => handleEdit(prompt)} className="edit-btn">Edita</button>
               </li>
             ))}
           </ul>
