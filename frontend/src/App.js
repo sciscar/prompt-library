@@ -103,20 +103,23 @@ function App() {
     const searchStr = search.trim().toLowerCase();
     if (searchStr === '') return true;
     
+    // Convertim tots els camps a string (i si són undefined, els posem a '')
     const fields = [
-      prompt.nom,
-      prompt.descripcio,
-      prompt.categoria,
-      prompt.einaIA,
-      String(prompt.puntuacio),
-      prompt.textPrompt,
-      prompt.etiquetes.join(' ')
+      prompt.nom || '',
+      prompt.descripcio || '',
+      prompt.categoria || '',
+      prompt.einaIA || '',
+      prompt.puntuacio != null ? String(prompt.puntuacio) : '',
+      prompt.textPrompt || '',
+      (prompt.etiquetes || []).join(' ')
     ];
-    
+  
+    // Ara cada camp és, com a mínim, una cadena buida
     return fields.some(field =>
-      String(field || '').toLowerCase().includes(searchStr)
+      field.toLowerCase().includes(searchStr)
     );
   };
+  
   
 
   // Filtrar prompts segons el buscador global, etiqueta i categoria
