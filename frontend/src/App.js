@@ -222,7 +222,7 @@ function App() {
             </div>
             <div className="form-group">
               <label>Text del Prompt:</label>
-              <textarea name="textPrompt" rows="4" value={formData.textPrompt} onChange={handleChange} required />
+              <textarea name="textPrompt" rows="30" value={formData.textPrompt} onChange={handleChange} required />
             </div>
             <div className="form-actions">
               <button type="submit" className="submit-btn">
