@@ -13,7 +13,7 @@
     "react-scripts": "^3.0.1",
     "web-vitals": "^2.1.4"
   },
-  "homepage": "https://sciscar.github.io/prompt-library",
+  "homepage": "https://prompt-library-peach.vercel.app",
 
   "scripts": {
     "start": "react-scripts start",

@@ -1,0 +1,48 @@
+name: Actualitza fitxer prompts.json
+
+on:
+  workflow_dispatch:
+    inputs:
+      promptData:
+        description: 'Dades del prompt en format JSON'
+        required: true
+        default: '{}'
+
+jobs:
+  update_prompts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Comprova si existeix el fitxer prompts.json
+        id: check_file
+        run: |
+          if [ -f prompts.json ]; then
+            echo "::set-output name=exists::true"
+          else
+            echo "::set-output name=exists::false"
+          fi
+
+      - name: Actualitza o crea el fitxer prompts.json
+        run: |
+          # Obté les dades del input com a variable
+          NEW_PROMPT='${{ github.event.inputs.promptData }}'
+          echo "Nova dada: $NEW_PROMPT"
+          
+          if [ "${{ steps.check_file.outputs.exists }}" = "true" ]; then
+            # Afegir la nova dada a l'array existent dins de 'prompts'
+            # Utilitzem 'jq' per manipular el JSON
+            cat prompts.json | jq --argjson newPrompt "$NEW_PROMPT" '.prompts += [$newPrompt]' > tmp.json && mv tmp.json prompts.json
+          else
+            # Si no existeix, crea el fitxer amb un array que conté la nova dada
+            echo "{\"prompts\": [$NEW_PROMPT]}" > prompts.json
+          fi
+
+      - name: Commit i push dels canvis
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add prompts.json
+          git commit -m "Actualitza prompts amb nova dada" || echo "No hi ha canvis per commitejar"
+          git push
