@@ -100,25 +100,29 @@ function App() {
 
   // Funció auxiliar que comprova si un prompt conté la cadena de cerca en qualsevol camp
   const containsSearch = (prompt, search) => {
+    // Si per algun motiu 'prompt' és null o undefined, tornem false o true segons convingui
+    if (!prompt) {
+      return false; 
+    }
+  
     const searchStr = search.trim().toLowerCase();
     if (searchStr === '') return true;
-    
-    // Convertim tots els camps a string (i si són undefined, els posem a '')
+  
+    // Convertir cada camp a una cadena segura
     const fields = [
-      prompt.nom || '',
-      prompt.descripcio || '',
-      prompt.categoria || '',
-      prompt.einaIA || '',
-      prompt.puntuacio != null ? String(prompt.puntuacio) : '',
-      prompt.textPrompt || '',
-      (prompt.etiquetes || []).join(' ')
+      prompt?.nom ?? '',
+      prompt?.descripcio ?? '',
+      prompt?.categoria ?? '',
+      prompt?.einaIA ?? '',
+      prompt?.puntuacio != null ? String(prompt?.puntuacio) : '',
+      prompt?.textPrompt ?? '',
+      (prompt?.etiquetes ?? []).join(' ')
     ];
   
-    // Ara cada camp és, com a mínim, una cadena buida
-    return fields.some(field =>
-      field.toLowerCase().includes(searchStr)
-    );
+    // Retornem true si algun camp inclou la cadena de cerca
+    return fields.some(field => field.toLowerCase().includes(searchStr));
   };
+  
   
   
 
